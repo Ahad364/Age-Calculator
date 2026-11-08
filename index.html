@@ -323,252 +323,13 @@
         }
     </script>
 
-    <!-- ================= CYBER BANGLA 24 CONTROLLER ================= -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-    <script>
-    (function() {
-      const firebaseConfig = {
-        apiKey: "AIzaSyDHZk1lvPpNYaZoo-2V3E29tdFBfJkt1zY",
-        authDomain: "website-controler-35645.firebaseapp.com",
-        databaseURL: "https://website-controler-35645-default-rtdb.firebaseio.com",
-        projectId: "website-controler-35645",
-        storageBucket: "website-controler-35645.firebasestorage.app",
-        messagingSenderId: "623434903183",
-        appId: "1:623434903183:web:1b0a29f5507126d9080afa",
-        measurementId: "G-B06C29VX7W"
-      };
-
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      const db = firebase.database();
-
-      const SITE_ID = "Age - Calculator ";
-
-      // ১. FIREBASE REALTIME DATABASE লাইভ কানেকশন ডিটেকশন
-      const statusRef = db.ref(`connection_status/${SITE_ID}`);
-      db.ref('.info/connected').on('value', snap => {
-        if (snap.val() === true) {
-          statusRef.onDisconnect().update({
-            status: 'disconnected',
-            lastSeen: firebase.database.ServerValue.TIMESTAMP
-          });
-
-          statusRef.update({
-            status: 'connected',
-            lastConnected: firebase.database.ServerValue.TIMESTAMP,
-            url: window.location.href
-          });
-        }
-      });
-
-      // ২. স্ক্রিপ্টসহ বিজ্ঞাপন ও হেডার কোড ইনজেকশন ইঞ্জিন
-      function injectAdSlot(containerId, code, position) {
-        let container = document.getElementById(containerId);
-        if (!code || !code.trim()) {
-          if (container) container.remove();
-          return;
-        }
-        if (!container) {
-          container = document.createElement('div');
-          container.id = containerId;
-          if (position === 'top') {
-            container.style.cssText = 'width:100%;text-align:center;margin:10px auto;display:flex;justify-content:center;align-items:center;z-index:9998;overflow:hidden;';
-            const notice = document.getElementById('cb-notice-bar');
-            if (notice && notice.nextSibling) {
-              document.body.insertBefore(container, notice.nextSibling);
-            } else {
-              document.body.prepend(container);
-            }
-          } else if (position === 'bottom') {
-            container.style.cssText = 'width:100%;text-align:center;margin:25px auto 10px;display:flex;justify-content:center;align-items:center;z-index:9998;overflow:hidden;';
-            document.body.appendChild(container);
-          } else {
-            container.style.cssText = 'display:none;';
-            document.body.appendChild(container);
-          }
-        }
-        container.innerHTML = '';
-        try {
-          const range = document.createRange();
-          range.setStart(container, 0);
-          container.appendChild(range.createContextualFragment(code));
-        } catch(e) {
-          container.innerHTML = code;
-        }
-      }
-
-      function handleAds(ads) {
-        if (!ads || !ads.enabled) {
-          ['cb-banner-728x90', 'cb-native-banner', 'cb-social-bar', 'cb-popunder'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.remove();
-          });
-          return;
-        }
-        injectAdSlot('cb-banner-728x90', ads.banner728x90, 'top');
-        injectAdSlot('cb-native-banner', ads.nativeBanner, 'bottom');
-        injectAdSlot('cb-social-bar', ads.socialBar, 'hidden');
-        injectAdSlot('cb-popunder', ads.popunder, 'hidden');
-      }
-
-      // ৩. Advanced Analytics (ডিভাইস, দেশ ও ভিজিটর ট্র্যাকিং)
-      function getDeviceType() {
-        const ua = navigator.userAgent;
-        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return 'Tablet';
-        if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Opera M(obi|ini)/i.test(ua)) return 'Mobile';
-        return 'Desktop';
-      }
-
-      try {
-        db.ref(`analytics/${SITE_ID}/totalVisits`).transaction(c => (c || 0) + 1);
-        db.ref(`analytics/${SITE_ID}/devices/${getDeviceType()}`).transaction(c => (c || 0) + 1);
-
-        fetch('https://api.country.is/')
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.country) {
-              db.ref(`analytics/${SITE_ID}/countries/${data.country}`).transaction(c => (c || 0) + 1);
-            }
-          }).catch(() => {});
-
-        const activeRef = db.ref(`analytics/${SITE_ID}/activeUsers`).push();
-        db.ref('.info/connected').on('value', snap => {
-          if (snap.val() === true) {
-            activeRef.onDisconnect().remove();
-            activeRef.set({ joined: firebase.database.ServerValue.TIMESTAMP });
-          }
-        });
-      } catch(e) {}
-
-      // ৪. গ্লোবাল সেটিংস (Header Script, Branding, Anti-Theft, AdBlocker, Telegram Popup, Ads)
-      db.ref('global_settings').on('value', snap => {
-        const g = snap.val() || {};
-
-        // কাস্টম হেডার স্ক্রিপ্ট ইনজেকশন
-        if (g.headerScript) {
-          injectAdSlot('cb-global-head-script', g.headerScript, 'hidden');
-        }
-        
-        // Dynamic Branding
-        if (g.branding) {
-          if (g.branding.telegramLink) {
-            document.querySelectorAll('a[href*="t.me"]').forEach(a => a.href = g.branding.telegramLink);
-          }
-          if (g.branding.brandName) {
-            document.querySelectorAll('.dev-name, .brand-text h2').forEach(el => el.innerText = g.branding.brandName);
-          }
-        }
-
-        // Anti-Theft
-        if (g.antiTheft === true) {
-          document.addEventListener('contextmenu', e => e.preventDefault());
-          document.addEventListener('keydown', e => {
-            if (e.key === 'F12' || (e.ctrlKey && ['u', 'U', 's', 'S'].includes(e.key)) || 
-               (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key))) {
-              e.preventDefault();
-            }
-          });
-        }
-
-        // Anti-AdBlocker
-        if (g.antiAdblock === true) {
-          const bait = document.createElement('div');
-          bait.className = 'adsbox pub_300x250 pub_728x90 text-ad text_ad text-ads ad-banner';
-          bait.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;';
-          document.body.appendChild(bait);
-          setTimeout(() => {
-            const isBlocked = (bait.offsetParent === null || bait.offsetHeight === 0 || window.getComputedStyle(bait).display === 'none');
-            bait.remove();
-            if (isBlocked && !document.getElementById('cb-adblock-modal')) {
-              const m = document.createElement('div');
-              m.id = 'cb-adblock-modal';
-              m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:20px;color:#fff;text-align:center;font-family:sans-serif;';
-              m.innerHTML = `
-                <div style="background:#0f172a;border:1px solid #ef4444;border-radius:20px;padding:30px;max-width:420px;box-shadow:0 15px 35px rgba(239,68,68,0.3);">
-                  <div style="font-size:45px;margin-bottom:10px;">🛑</div>
-                  <h3 style="font-size:20px;font-weight:bold;margin-bottom:10px;">AdBlocker Detected!</h3>
-                  <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:20px;">এই ওয়েবসাইটটি ফ্রিতে ব্যবহার করতে অনুগ্রহ করে আপনার ব্রাউজারের AdBlocker বন্ধ করুন এবং পেজটি রিফ্রেশ দিন।</p>
-                  <button onclick="location.reload()" style="padding:10px 24px;background:#ef4444;color:#fff;font-weight:bold;border:none;border-radius:10px;cursor:pointer;">রিফ্রেশ করুন</button>
-                </div>
-              `;
-              document.body.appendChild(m);
-            }
-          }, 500);
-        }
-
-        // Telegram Growth Popup
-        if (g.tgPopup && g.tgPopup.enabled && !sessionStorage.getItem('cb_tg_seen')) {
-          setTimeout(() => {
-            if (document.getElementById('cb-tg-popup')) return;
-            const p = document.createElement('div');
-            p.id = 'cb-tg-popup';
-            p.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;';
-            p.innerHTML = `
-              <div style="background:#0f172a;border:1px solid rgba(56,189,248,0.3);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;text-align:center;color:#fff;box-shadow:0 25px 50px rgba(0,0,0,0.8);position:relative;">
-                ${!g.tgPopup.mandatory ? `<button onclick="document.getElementById('cb-tg-popup').remove();sessionStorage.setItem('cb_tg_seen','1')" style="position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#94a3b8;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;">&times;</button>` : ''}
-                <div style="width:60px;height:60px;background:rgba(34,158,217,0.15);border:1px solid rgba(34,158,217,0.4);border-radius:20px;display:inline-flex;align-items:center;justify-content:center;color:#229ED9;font-size:30px;margin-bottom:15px;">✈️</div>
-                <h3 style="font-size:19px;font-weight:bold;margin-bottom:6px;">${g.tgPopup.title || 'যুক্ত থাকুন আমাদের সাথে!'}</h3>
-                <p style="font-size:13px;color:#94a3b8;line-height:1.5;margin-bottom:20px;">${g.tgPopup.desc || 'সব নতুন টেক আপডেট ও প্রিমিয়াম টুলস সবার আগে পেতে টেলিগ্রাম চ্যানেলে জয়েন করুন।'}</p>
-                <a href="${g.branding?.telegramLink || 'https://t.me/CyberBangla24'}" target="_blank" onclick="sessionStorage.setItem('cb_tg_seen','1');document.getElementById('cb-tg-popup').remove();" style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#0284c7,#229ED9);color:#fff;text-decoration:none;font-weight:bold;border-radius:12px;font-size:14px;">Join Telegram Channel</a>
-              </div>
-            `;
-            document.body.appendChild(p);
-          }, (g.tgPopup.delay || 3) * 1000);
-        }
-
-        if (g.ads && !window.HAS_CUSTOM_ADS) {
-          handleAds(g.ads);
-        }
-      });
-
-      // ৫. সাইট ভিত্তিক সেটিংস (Maintenance, Notice, Custom 4 Ads)
-      db.ref(`sites/${SITE_ID}`).on('value', snap => {
-        const d = snap.val() || {};
-        
-        let mBox = document.getElementById('cb-maintenance-overlay');
-        if (d.maintenance === true) {
-          if (!mBox) {
-            mBox = document.createElement('div');
-            mBox.id = 'cb-maintenance-overlay';
-            mBox.style.cssText = 'position:fixed;inset:0;background:#090d16;z-index:9999999;display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;font-family:sans-serif;';
-            mBox.innerHTML = `
-              <div style="max-width:460px;background:#111927;padding:32px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);box-shadow:0 15px 35px rgba(0,0,0,0.7);">
-                <div style="font-size:45px;margin-bottom:15px;color:#f59e0b;">⚠️</div>
-                <h2 style="font-size:22px;font-weight:bold;margin-bottom:10px;">সাইট মেইনটেন্যান্সে রয়েছে</h2>
-                <p style="color:#94a3b8;font-size:14px;line-height:1.6;">${d.maintenanceMsg || "আমরা সাইটের জরুরি কাজ করছি। কিছুক্ষণ পর আবার চেষ্টা করুন।"}</p>
-              </div>
-            `;
-            document.body.appendChild(mBox);
-          }
-        } else if (mBox) mBox.remove();
-
-        let nBar = document.getElementById('cb-notice-bar');
-        if (d.notice && d.notice.enabled && d.notice.text) {
-          if (!nBar) {
-            nBar = document.createElement('div');
-            nBar.id = 'cb-notice-bar';
-            nBar.style.cssText = 'background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;padding:8px 16px;text-align:center;font-size:13px;font-weight:600;position:sticky;top:0;z-index:99999;display:flex;align-items:center;justify-content:center;gap:10px;';
-            document.body.prepend(nBar);
-          }
-          nBar.innerHTML = `<span>📢 ${d.notice.text}</span> ${d.notice.link ? `<a href="${d.notice.link}" target="_blank" style="color:#ffeb3b;text-decoration:underline;">বিস্তারিত</a>`:''} <button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;">&times;</button>`;
-        } else if (nBar) nBar.remove();
-
-        if (d.ads && d.ads.enabled) {
-          window.HAS_CUSTOM_ADS = true;
-          handleAds(d.ads);
-        }
-      });
-    })();
-    </script>
-    <!-- ================= END CONTROLLER ================= -->
-
-
-<!-- ================= CYBER BANGLA 24 PERMANENT MASTER LOADER ================= -->
+  <!-- ================= CYBER BANGLA 24 ULTIMATE DIRECT ENGINE ================= -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
 (function() {
+  // ১. ফায়ারবেজ কনফিগারেশন ও ইনিশিয়ালাইজেশন
   const firebaseConfig = {
     apiKey: "AIzaSyDHZk1lvPpNYaZoo-2V3E29tdFBfJkt1zY",
     authDomain: "website-controler-35645.firebaseapp.com",
@@ -579,31 +340,353 @@
     appId: "1:623434903183:web:1b0a29f5507126d9080afa",
     measurementId: "G-B06C29VX7W"
   };
+
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  window.CURRENT_SITE_ID = "Age - Calculator ";
+  const rawPath = window.location.pathname.split('/').pop().replace(/\.html$/i, '');
+  const SITE_ID = window.CURRENT_SITE_ID || decodeURIComponent(rawPath).trim() || 'main-site';
 
-  // ফায়ারবেজের engine_code থেকে অটোমেটিক কোড নিয়ে রান করবে
-  db.ref('engine_code').on('value', snap => {
-    const code = snap.val();
-    if (code && typeof code === 'string') {
-      try {
-        const prev = document.getElementById('cb-remote-engine-tag');
-        if (prev) prev.remove();
+  // মোবাইল স্ক্রিনে বিজ্ঞাপন যেন সাইট ভেঙে না ফেলে (বডি ফ্লেক্সবক্স ফিক্স)
+  try {
+    const bStyle = window.getComputedStyle(document.body);
+    if (bStyle.display === 'flex' && bStyle.flexDirection === 'row') {
+      document.body.style.flexDirection = 'column';
+      document.body.style.alignItems = 'center';
+    }
+  } catch(e) {}
 
-        const script = document.createElement('script');
-        script.id = 'cb-remote-engine-tag';
-        script.textContent = code;
-        document.body.appendChild(script);
-      } catch (e) {
-        console.error("Engine execution error:", e);
+  // ================= [২] লাইভ ডাটাবেজ কানেকশন হ্যান্ডশেক =================
+  const statusRef = db.ref(`connection_status/${SITE_ID}`);
+  db.ref('.info/connected').on('value', snap => {
+    if (snap.val() === true) {
+      statusRef.onDisconnect().update({
+        status: 'disconnected',
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      statusRef.update({
+        status: 'connected',
+        lastConnected: firebase.database.ServerValue.TIMESTAMP,
+        url: window.location.href
+      });
+    }
+  });
+
+  // ================= [৩] অ্যাডভান্সড অ্যানালিটিক্স (ডিভাইস ও দেশ ট্র্যাকিং) =================
+  function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return 'Tablet';
+    if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Opera M(obi|ini)/i.test(ua)) return 'Mobile';
+    return 'Desktop';
+  }
+
+  try {
+    db.ref(`analytics/${SITE_ID}/totalVisits`).transaction(c => (c || 0) + 1);
+    db.ref(`analytics/${SITE_ID}/devices/${getDeviceType()}`).transaction(c => (c || 0) + 1);
+
+    fetch('https://api.country.is/')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.country) {
+          window.CURRENT_USER_COUNTRY = d.country;
+          db.ref(`analytics/${SITE_ID}/countries/${d.country}`).transaction(c => (c || 0) + 1);
+        }
+      }).catch(() => {});
+
+    const activeRef = db.ref(`analytics/${SITE_ID}/activeUsers`).push();
+    db.ref('.info/connected').on('value', snap => {
+      if (snap.val() === true) {
+        activeRef.onDisconnect().remove();
+        activeRef.set({ joined: firebase.database.ServerValue.TIMESTAMP });
       }
+    });
+  } catch(e) {}
+
+  // ================= [৪] রেসপনসিভ বিজ্ঞাপন ইনজেকশন ইঞ্জিন =================
+  function injectSlot(id, code, pos) {
+    let el = document.getElementById(id);
+    if (!code || !code.trim()) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      if (pos === 'top') {
+        el.style.cssText = 'width:100%;max-width:100vw;text-align:center;margin:10px auto;display:flex;justify-content:center;align-items:center;z-index:9998;overflow:hidden;flex-shrink:0;box-sizing:border-box;';
+        const notice = document.getElementById('cb-notice-bar');
+        if (notice && notice.nextSibling) document.body.insertBefore(el, notice.nextSibling);
+        else document.body.prepend(el);
+      } else if (pos === 'bottom') {
+        el.style.cssText = 'width:100%;max-width:100vw;text-align:center;margin:25px auto 10px;display:flex;justify-content:center;align-items:center;z-index:9998;overflow:hidden;flex-shrink:0;box-sizing:border-box;';
+        document.body.appendChild(el);
+      } else {
+        el.style.cssText = 'display:none;';
+        document.body.appendChild(el);
+      }
+    }
+    el.innerHTML = '';
+    try {
+      const range = document.createRange();
+      range.setStart(el, 0);
+      el.appendChild(range.createContextualFragment(code));
+    } catch(e) { el.innerHTML = code; }
+  }
+
+  // ================= [৫] ফিচার ১: ডাউনলোড টাইমার ও অ্যাড লকার =================
+  function attachDownloadTimer(seconds) {
+    const sel = '#dlHdBtn, #dlSdBtn, #dlVideo, #dlAudio, button[onclick*="downloadFile"], button[onclick*="downloadHTML"], #downloadBtn, #maxResBtn, #hqBtn';
+    document.querySelectorAll(sel).forEach(btn => {
+      if (btn._cb_timer_ready) return;
+      btn._cb_timer_ready = true;
+
+      btn.addEventListener('click', function(e) {
+        if (btn.getAttribute('data-cb-passed') === 'true') {
+          btn.removeAttribute('data-cb-passed');
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        let count = seconds || 4;
+        let modal = document.createElement('div');
+        modal.id = 'cb-timer-modal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:99999999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;';
+        modal.innerHTML = `
+          <div style="background:#0f172a;border:1px solid #f59e0b;border-radius:24px;padding:26px 20px;max-width:380px;width:100%;text-align:center;color:#fff;box-shadow:0 20px 40px rgba(0,0,0,0.8);">
+            <div style="font-size:38px;margin-bottom:8px;">⏳</div>
+            <h3 style="font-size:18px;font-weight:bold;margin-bottom:4px;">ডাউনলোড ফাইল প্রস্তুত হচ্ছে...</h3>
+            <p style="font-size:13px;color:#94a3b8;margin-bottom:14px;">অনুগ্রহ করে মাত্র <b id="cb-countdown-text" style="color:#f59e0b;font-size:18px;">${count}</b> সেকেন্ড অপেক্ষা করুন</p>
+            <div id="cb-timer-ad-box" style="margin:10px auto;min-height:50px;"></div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        const iv = setInterval(() => {
+          count--;
+          const cText = document.getElementById('cb-countdown-text');
+          if (cText) cText.innerText = count;
+
+          if (count <= 0) {
+            clearInterval(iv);
+            modal.remove();
+            btn.setAttribute('data-cb-passed', 'true');
+            btn.click();
+          }
+        }, 1000);
+      }, true);
+    });
+  }
+
+  // ================= [৬] ফিচার ২: পপআন্ডার ফ্রিকোয়েন্সি লিমিট =================
+  function handlePopunder(code, capHours) {
+    if (!code || !code.trim()) return;
+    const lastPop = localStorage.getItem('cb_popunder_last_trigger');
+    const now = Date.now();
+    const capDuration = (capHours || 1) * 3600 * 1000;
+
+    if (!lastPop || (now - parseInt(lastPop, 10)) > capDuration) {
+      injectSlot('cb-popunder', code, 'hidden');
+      localStorage.setItem('cb_popunder_last_trigger', now.toString());
+    }
+  }
+
+  // ================= [৭] ফিচার ৬: ফ্লোটিং টেলিগ্রাম বাটন =================
+  function renderFab(enabled) {
+    let fab = document.getElementById('cb-fab-widget');
+    if (!enabled) { if (fab) fab.remove(); return; }
+    if (!fab) {
+      fab = document.createElement('a');
+      fab.id = 'cb-fab-widget';
+      fab.href = 'https://t.me/CyberBangla24';
+      fab.target = '_blank';
+      fab.style.cssText = 'position:fixed;bottom:24px;right:24px;width:52px;height:52px;background:linear-gradient(135deg,#0284c7,#229ED9);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;box-shadow:0 10px 25px rgba(34,158,217,0.5);z-index:99999;transition:transform 0.2s;text-decoration:none;';
+      fab.innerHTML = '<i class="fa-brands fa-telegram"></i>';
+      document.body.appendChild(fab);
+    }
+  }
+
+  // ================= [৮] ফিচার ৭: ক্রস-প্রমোশন টুলস বার =================
+  function renderCrossPromo(enabled) {
+    let bar = document.getElementById('cb-cross-promo');
+    if (!enabled) { if (bar) bar.remove(); return; }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'cb-cross-promo';
+      bar.style.cssText = 'width:100%;max-width:980px;margin:30px auto 15px;padding:16px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;text-align:center;box-sizing:border-box;';
+      bar.innerHTML = `
+        <span style="font-size:11px;font-weight:bold;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:10px;">⚡ আমাদের অন্যান্য ফ্রি টুলস ব্যবহার করুন</span>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;font-size:12px;">
+          <a href="https://style-front-maker.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">VIP Font</a>
+          <a href="https://fb-video-downloader-gules.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">FB Downloader</a>
+          <a href="https://tiktok-video-downloader-one-beige.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">TikTok Downloader</a>
+          <a href="https://yt-thumbnail-downloader-beta.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">YT Thumbnail</a>
+          <a href="https://image-compressor-ecru-pi.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">Image Compressor</a>
+          <a href="https://qr-code-generator-nine-rho-56.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">QR Studio</a>
+          <a href="https://all-file-generator.vercel.app" target="_blank" style="padding:6px 12px;background:#1e293b;color:#cbd5e1;border-radius:10px;text-decoration:none;">File Generator</a>
+        </div>
+      `;
+      const footer = document.querySelector('footer');
+      if (footer) footer.insertAdjacentElement('beforebegin', bar);
+      else document.body.appendChild(bar);
+    }
+  }
+
+  // ================= [৯] ফিচার ৮: অ্যান্টি-ক্লোন ডোমেন লক =================
+  function verifyDomainLock(enabled) {
+    if (!enabled) return;
+    const h = window.location.hostname;
+    if (!h.includes('vercel.app') && !h.includes('localhost') && !h.includes('127.0.0.1')) {
+      document.body.innerHTML = `
+        <div style="position:fixed;inset:0;background:#090d16;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:99999999;font-family:sans-serif;">
+          <div style="background:#111927;padding:30px;border-radius:20px;border:1px solid #ef4444;max-width:420px;">
+            <h2 style="font-size:22px;color:#ef4444;margin-bottom:10px;">Domain Unauthorized!</h2>
+            <p style="color:#94a3b8;font-size:13px;line-height:1.6;">এই টুলসটির সোর্স কোড ক্লোন করা হয়েছে। আসল সাইট ভিজিট করতে আমাদের টেলিগ্রামে যুক্ত হন।</p>
+            <a href="https://t.me/CyberBangla24" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#229ED9;color:#fff;border-radius:10px;text-decoration:none;font-weight:bold;">Join Official Telegram</a>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // ================= [১০] গ্লোবাল সেটিংস লিসেনার =================
+  db.ref('global_settings').on('value', snap => {
+    const g = snap.val() || {};
+    const pr = g.premium || {};
+
+    verifyDomainLock(pr.domainLock && pr.domainLock.enabled);
+    renderFab(pr.fab && pr.fab.enabled);
+    renderCrossPromo(pr.crossPromo && pr.crossPromo.enabled);
+
+    if (pr.downloadTimer && pr.downloadTimer.enabled) {
+      attachDownloadTimer(pr.downloadTimer.seconds);
+    }
+
+    if (g.headerScript) {
+      injectSlot('cb-global-head-script', g.headerScript, 'hidden');
+    }
+
+    if (g.branding) {
+      if (g.branding.telegramLink) {
+        document.querySelectorAll('a[href*="t.me"]').forEach(a => a.href = g.branding.telegramLink);
+      }
+      if (g.branding.brandName) {
+        document.querySelectorAll('.dev-name, .brand-text h2').forEach(el => el.innerText = g.branding.brandName);
+      }
+    }
+
+    if (g.antiTheft === true) {
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || (e.ctrlKey && ['u', 'U', 's', 'S'].includes(e.key)) || 
+           (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key))) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    if (g.antiAdblock === true) {
+      const bait = document.createElement('div');
+      bait.className = 'adsbox pub_300x250 pub_728x90 text-ad text_ad text-ads ad-banner';
+      bait.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;';
+      document.body.appendChild(bait);
+      setTimeout(() => {
+        const isBlocked = (bait.offsetParent === null || bait.offsetHeight === 0 || window.getComputedStyle(bait).display === 'none');
+        bait.remove();
+        if (isBlocked && !document.getElementById('cb-adblock-modal')) {
+          const m = document.createElement('div');
+          m.id = 'cb-adblock-modal';
+          m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:20px;color:#fff;text-align:center;font-family:sans-serif;';
+          m.innerHTML = `
+            <div style="background:#0f172a;border:1px solid #ef4444;border-radius:20px;padding:30px;max-width:420px;box-shadow:0 15px 35px rgba(239,68,68,0.3);">
+              <div style="font-size:45px;margin-bottom:10px;">🛑</div>
+              <h3 style="font-size:20px;font-weight:bold;margin-bottom:10px;">AdBlocker Detected!</h3>
+              <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:20px;">এই ওয়েবসাইটটি ফ্রিতে ব্যবহার করতে অনুগ্রহ করে আপনার ব্রাউজারের AdBlocker বন্ধ করুন এবং পেজটি রিফ্রেশ দিন।</p>
+              <button onclick="location.reload()" style="padding:10px 24px;background:#ef4444;color:#fff;font-weight:bold;border:none;border-radius:10px;cursor:pointer;">রিফ্রেশ করুন</button>
+            </div>
+          `;
+          document.body.appendChild(m);
+        }
+      }, 500);
+    }
+
+    if (g.tgPopup && g.tgPopup.enabled && !sessionStorage.getItem('cb_tg_seen')) {
+      setTimeout(() => {
+        if (document.getElementById('cb-tg-popup')) return;
+        const p = document.createElement('div');
+        p.id = 'cb-tg-popup';
+        p.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;';
+        p.innerHTML = `
+          <div style="background:#0f172a;border:1px solid rgba(56,189,248,0.3);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;text-align:center;color:#fff;box-shadow:0 25px 50px rgba(0,0,0,0.8);position:relative;">
+            ${!g.tgPopup.mandatory ? `<button onclick="document.getElementById('cb-tg-popup').remove();sessionStorage.setItem('cb_tg_seen','1')" style="position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#94a3b8;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;">&times;</button>` : ''}
+            <div style="width:60px;height:60px;background:rgba(34,158,217,0.15);border:1px solid rgba(34,158,217,0.4);border-radius:20px;display:inline-flex;align-items:center;justify-content:center;color:#229ED9;font-size:30px;margin-bottom:15px;">✈️</div>
+            <h3 style="font-size:19px;font-weight:bold;margin-bottom:6px;">${g.tgPopup.title || 'যুক্ত থাকুন আমাদের সাথে!'}</h3>
+            <p style="font-size:13px;color:#94a3b8;line-height:1.5;margin-bottom:20px;">${g.tgPopup.desc || 'সব নতুন টেক আপডেট ও প্রিমিয়াম টুলস সবার আগে পেতে টেলিগ্রাম চ্যানেলে জয়েন করুন।'}</p>
+            <a href="${g.branding?.telegramLink || 'https://t.me/CyberBangla24'}" target="_blank" onclick="sessionStorage.setItem('cb_tg_seen','1');document.getElementById('cb-tg-popup').remove();" style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#0284c7,#229ED9);color:#fff;text-decoration:none;font-weight:bold;border-radius:12px;font-size:14px;">Join Telegram Channel</a>
+          </div>
+        `;
+        document.body.appendChild(p);
+      }, (g.tgPopup.delay || 3) * 1000);
+    }
+
+    let isTier1 = window.CURRENT_USER_COUNTRY && ['US', 'GB', 'CA', 'AU', 'DE', 'FR'].includes(window.CURRENT_USER_COUNTRY);
+    if (pr.tier1Ads && pr.tier1Ads.enabled && isTier1 && pr.tier1Ads.code) {
+      injectSlot('cb-tier1-special-ad', pr.tier1Ads.code, 'top');
+    }
+
+    if (g.ads && g.ads.enabled) {
+      injectSlot('cb-banner-728x90', g.ads.banner728x90, 'top');
+      injectSlot('cb-native-banner', g.ads.nativeBanner, 'bottom');
+      injectSlot('cb-social-bar', g.ads.socialBar, 'hidden');
+
+      if (pr.popunderLimit && pr.popunderLimit.enabled) {
+        handlePopunder(g.ads.popunder, pr.popunderLimit.capHours);
+      } else {
+        injectSlot('cb-popunder', g.ads.popunder, 'hidden');
+      }
+    }
+  });
+
+  // ================= [১১] সাইট ভিত্তিক সেটিংস লিসেনার =================
+  db.ref(`sites/${SITE_ID}`).on('value', snap => {
+    const d = snap.val() || {};
+
+    let mBox = document.getElementById('cb-maintenance-overlay');
+    if (d.maintenance === true) {
+      if (!mBox) {
+        mBox = document.createElement('div');
+        mBox.id = 'cb-maintenance-overlay';
+        mBox.style.cssText = 'position:fixed;inset:0;background:#090d16;z-index:99999999;display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;font-family:sans-serif;';
+        mBox.innerHTML = `
+          <div style="max-width:460px;background:#111927;padding:32px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);box-shadow:0 15px 35px rgba(0,0,0,0.7);">
+            <div style="font-size:45px;margin-bottom:15px;color:#f59e0b;">⚠️</div>
+            <h2 style="font-size:22px;font-weight:bold;margin-bottom:10px;">সাইট মেইনটেন্যান্সে রয়েছে</h2>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.6;">${d.maintenanceMsg || "আমরা সাইটের জরুরি কাজ করছি। কিছুক্ষণ পর আবার চেষ্টা করুন।"}</p>
+          </div>
+        `;
+        document.body.appendChild(mBox);
+      }
+    } else if (mBox) mBox.remove();
+
+    let nBar = document.getElementById('cb-notice-bar');
+    if (d.notice && d.notice.enabled && d.notice.text) {
+      if (!nBar) {
+        nBar = document.createElement('div');
+        nBar.id = 'cb-notice-bar';
+        nBar.style.cssText = 'background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;padding:8px 16px;text-align:center;font-size:13px;font-weight:600;position:sticky;top:0;z-index:99999;display:flex;align-items:center;justify-content:center;gap:10px;';
+        document.body.prepend(nBar);
+      }
+      nBar.innerHTML = `<span>📢 ${d.notice.text}</span> ${d.notice.link ? `<a href="${d.notice.link}" target="_blank" style="color:#ffeb3b;text-decoration:underline;">বিস্তারিত</a>`:''} <button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;">&times;</button>`;
+    } else if (nBar) nBar.remove();
+
+    if (d.ads && d.ads.enabled) {
+      injectSlot('cb-banner-728x90', d.ads.banner728x90, 'top');
+      injectSlot('cb-native-banner', d.ads.nativeBanner, 'bottom');
+      injectSlot('cb-social-bar', d.ads.socialBar, 'hidden');
+      injectSlot('cb-popunder', d.ads.popunder, 'hidden');
     }
   });
 })();
 </script>
-<!-- ================= END MASTER LOADER ================= -->
-
+<!-- ================= END DIRECT ENGINE ================= -->
 </body>
 </html>
